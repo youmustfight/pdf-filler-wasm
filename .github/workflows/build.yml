@@ -1,0 +1,108 @@
+name: Build WASM
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-wasm:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t pdf-filler-builder -f docker/Dockerfile .
+
+      - name: Build dependencies
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src pdf-filler-builder /src/deps/build-deps.sh
+
+      - name: Build WASM module
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src pdf-filler-builder /src/scripts/build-wasm.sh
+
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-module
+          path: |
+            dist/pdf-filler.js
+            dist/pdf-filler.wasm
+
+  build-js:
+    runs-on: ubuntu-latest
+    needs: build-wasm
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download WASM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-module
+          path: dist/
+
+      - name: Build TypeScript
+        run: pnpm build:ts
+
+      - name: Run typecheck
+        run: pnpm typecheck
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Upload final build
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build-js
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Get version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          files: |
+            dist/pdf-filler.js
+            dist/pdf-filler.wasm
+          draft: true
+          generate_release_notes: true
