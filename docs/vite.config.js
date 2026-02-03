@@ -4,7 +4,7 @@ import { copyFileSync, mkdirSync } from 'fs';
 
 export default defineConfig({
   root: 'src',
-  base: '/pdf-filler-js/',
+  base: './',
   build: {
     outDir: resolve(__dirname, 'build'),
     emptyOutDir: true,
