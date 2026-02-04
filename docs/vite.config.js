@@ -14,7 +14,8 @@ export default defineConfig({
     name: 'copy-wasm',
     closeBundle() {
       const src = resolve(__dirname, 'node_modules/pdf-filler-wasm/dist/pdf-filler.wasm');
-      copyFileSync(src, resolve(__dirname, 'build/assets/pdf-filler.wasm'));
+      // Copy to build root - Emscripten looks for WASM relative to the page
+      copyFileSync(src, resolve(__dirname, 'build/pdf-filler.wasm'));
     }
   }]
 });

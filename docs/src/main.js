@@ -1,16 +1,4 @@
-// Configure WASM location before importing library
-window.Module = {
-  locateFile: (path) => {
-    if (path.endsWith('.wasm')) {
-      // Resolve relative to the page, not the script
-      return new URL('./assets/pdf-filler.wasm', window.location.href).href;
-    }
-    return path;
-  }
-};
-
-// Dynamic import so Module config is set first
-const { PdfForm, initPdfFiller } = await import('pdf-filler-wasm');
+import { PdfForm, initPdfFiller } from 'pdf-filler-wasm';
 
 let currentForm = null;
 
