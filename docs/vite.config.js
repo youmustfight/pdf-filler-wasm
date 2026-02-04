@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import { copyFileSync, mkdirSync } from 'fs';
+import { copyFileSync } from 'fs';
 
 export default defineConfig({
   root: 'src',
@@ -14,10 +14,7 @@ export default defineConfig({
     name: 'copy-wasm',
     closeBundle() {
       const src = resolve(__dirname, 'node_modules/pdf-filler-wasm/dist/pdf-filler.wasm');
-      const destDir = resolve(__dirname, 'build/assets');
-      const dest = resolve(destDir, 'pdf-filler.wasm');
-      mkdirSync(destDir, { recursive: true });
-      copyFileSync(src, dest);
+      copyFileSync(src, resolve(__dirname, 'build/assets/pdf-filler.wasm'));
     }
   }]
 });

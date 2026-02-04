@@ -1,4 +1,14 @@
-import { PdfForm, initPdfFiller } from 'pdf-filler-wasm';
+// Configure WASM location before importing library
+const wasmUrl = new URL(/* @vite-ignore */ './assets/pdf-filler.wasm', import.meta.url).href;
+window.Module = {
+  locateFile: (path) => {
+    if (path.endsWith('.wasm')) return wasmUrl;
+    return path;
+  }
+};
+
+// Dynamic import so Module config is set first
+const { PdfForm, initPdfFiller } = await import('pdf-filler-wasm');
 
 let currentForm = null;
 
@@ -15,14 +25,12 @@ function setStatus(message, type = 'loading') {
 }
 
 // Initialize WASM
-(async () => {
-  try {
-    await initPdfFiller();
-    setStatus('Ready! Drop a PDF file to begin.', 'success');
-  } catch (err) {
-    setStatus(`Failed to load WASM: ${err.message}`, 'error');
-  }
-})();
+try {
+  await initPdfFiller();
+  setStatus('Ready! Drop a PDF file to begin.', 'success');
+} catch (err) {
+  setStatus(`Failed to load WASM: ${err.message}`, 'error');
+}
 
 // File drop handling
 dropZone.addEventListener('click', () => fileInput.click());
