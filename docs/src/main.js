@@ -1,8 +1,10 @@
 // Configure WASM location before importing library
-const wasmUrl = new URL(/* @vite-ignore */ './assets/pdf-filler.wasm', import.meta.url).href;
 window.Module = {
   locateFile: (path) => {
-    if (path.endsWith('.wasm')) return wasmUrl;
+    if (path.endsWith('.wasm')) {
+      // Resolve relative to the page, not the script
+      return new URL('./assets/pdf-filler.wasm', window.location.href).href;
+    }
     return path;
   }
 };
